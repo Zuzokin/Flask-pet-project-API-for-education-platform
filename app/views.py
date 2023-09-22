@@ -1,8 +1,10 @@
-from app import app, USERS, models
+from app import app, USERS, EXPRS, models
 from flask import request, Response
 import json
 from http import HTTPStatus
 from uuid import uuid1
+import random
+import http
 
 
 @app.route("/")
@@ -24,9 +26,8 @@ def user_create():
 
     user = models.User(user_id, first_name, last_name, phone, email, score=0)
     USERS[user_id] = user
-    # todo: check if user_id already exists
+
     response = Response(
-        # body
         json.dumps(
             {
                 "id": user.user_id,
@@ -37,10 +38,7 @@ def user_create():
                 "score": user.score,
             }
         ),
-        # status
         HTTPStatus.CREATED,
-        # headers
-        # content type
         mimetype="application/json",
     )
     return response
@@ -48,13 +46,11 @@ def user_create():
 
 @app.get("/user/<string:user_id>")
 def get_user(user_id):
-    # todo add validation for user_id
-    if len(user_id) != 36:
+    if user_id not in USERS.keys():
         return Response(status=HTTPStatus.NOT_FOUND)
 
     user = USERS[user_id]
     response = Response(
-        # body
         json.dumps(
             {
                 "id": user.user_id,
@@ -65,10 +61,64 @@ def get_user(user_id):
                 "score": user.score,
             }
         ),
-        # status
-        HTTPStatus.CREATED,
-        # headers
-        # content type
+        HTTPStatus.OK,
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.get("/math/expression")
+def generate_expr():
+    data = request.get_json()
+    expr_id = str(uuid1())
+    count_nums = data["count_nums"]
+    operation = data["operation"]  # expected +, *, -, //, **
+    if operation == "random":
+        operation = random.choice(["+", "-", "*", "//", "**"])
+    min_number = data["min"]
+    max_number = data["max"]
+
+    if count_nums <= 1 or (count_nums > 2 and operation not in {"+", "*"}):
+        return Response(status=http.HTTPStatus.BAD_REQUEST)
+
+    values = [random.randint(min_number, max_number) for _ in range(count_nums)]
+    expression = models.Expression(expr_id, operation, *values)
+    EXPRS[expr_id] = expression
+
+    response = Response(
+        json.dumps(
+            {
+                "id": expression.expr_id,
+                "operation": expression.operation,
+                "values": values,
+                "string_expr": expression.to_string(),
+                "answer": expression.answer,
+            }
+        ),
+        HTTPStatus.OK,
+        mimetype="application/json",
+    )
+    return response
+
+
+@app.get("/math/<string:expr_id>")
+def get_expr(expr_id):
+    if expr_id not in EXPRS.keys():
+        return Response(status=HTTPStatus.NOT_FOUND)
+
+    expression = EXPRS[expr_id]
+
+    response = Response(
+        json.dumps(
+            {
+                "id": expression.expr_id,
+                "operation": expression.operation,
+                "values": expression.values,
+                "string_expr": expression.to_string(),
+                "answer": expression.answer,
+            }
+        ),
+        HTTPStatus.OK,
         mimetype="application/json",
     )
     return response
