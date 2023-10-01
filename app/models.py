@@ -13,6 +13,9 @@ class User:
         self.email = email
         self.score = score
 
+    def __str__(self):
+        return f"({self.user_id}) {self.first_name} {self.last_name}"
+
     @staticmethod
     def is_valid_email(email):
         return re.fullmatch(r"[^@]+@[^@]+\.[^@]+", email)
@@ -46,6 +49,9 @@ class Expression:
             reward = len(self.values) - 1
         self.reward = reward
 
+    def __str__(self):
+        return f"({self.expr_id}) {self.to_string()} = {self.answer}"
+
     @staticmethod
     def is_valid_id(expr_id):
         return expr_id in EXPRS.keys()
@@ -72,6 +78,9 @@ class Question(ABC):
     @abstractmethod
     def answer(self):
         return self._answer
+
+    def __str__(self):
+        return f"({self.question_id}) {self.title}"
 
 
 class OneAnswer(Question):
