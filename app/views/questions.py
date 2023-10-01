@@ -13,7 +13,7 @@ def create_question():
     description = data["description"]
     question_type = data["type"]
     question_id = str(uuid1())
-    # question_id = str(len(EXPRS))
+    # question_id = str(len(QUEST))
     question = None
     if question_type == "ONE-ANSWER":
         answer = data["answer"]  # expecting string
@@ -85,14 +85,14 @@ def solve_question(question_id):
     user_id = data["user_id"]
     user_answer = data["user_answer"]
 
-    if user_id not in USERS.keys():
+    if not models.User.is_valid_id(user_id):
         return Response(
-            "there is no user with this id in the database.",
+            "there is no user with this id in the database",
             status=HTTPStatus.NOT_FOUND,
         )
-    if question_id not in QUEST.keys():
+    if not models.Question.is_valid_id(question_id):
         return Response(
-            "there is no question with this id in the database.",
+            "there is no question with this id in the database",
             status=HTTPStatus.NOT_FOUND,
         )
 
@@ -115,15 +115,19 @@ def solve_question(question_id):
     if user_answer == question.answer:
         user.increase_score(question.reward)
         result = "correct"
+        reward = question.reward
     else:
         result = "wrong"
+        reward = 0
+
+    user.solve(question, user_answer)  # add to history
 
     return Response(
         json.dumps(
             {
                 "question_id": question_id,
                 "result": result,
-                "reward": question.reward,
+                "reward": reward,
             }
         ),
         mimetype="application/json",

@@ -41,7 +41,10 @@ def user_create():
 @app.get("/user/<string:user_id>")
 def get_user(user_id):
     if not models.User.is_valid_id(user_id):
-        return Response(status=HTTPStatus.NOT_FOUND)
+        return Response(
+            "there is no user with this id in the database",
+            status=HTTPStatus.NOT_FOUND,
+        )
 
     user = USERS[user_id]
     response = Response(
@@ -59,3 +62,16 @@ def get_user(user_id):
         mimetype="application/json",
     )
     return response
+
+
+@app.get("/users/<string:user_id>/history")
+def get_user_history(user_id):
+    if not models.User.is_valid_id(user_id):
+        return Response(status=HTTPStatus.NOT_FOUND)
+
+    user = USERS[user_id]
+    return Response(
+        json.dumps({"history": user.history}),
+        status=HTTPStatus.OK,
+        mimetype="application/json",
+    )

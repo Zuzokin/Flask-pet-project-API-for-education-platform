@@ -1,6 +1,6 @@
 import re
 import random
-from app import USERS, EXPRS
+from app import USERS, EXPRS, QUEST
 from abc import ABC, abstractmethod
 
 
@@ -12,6 +12,7 @@ class User:
         self.phone = phone
         self.email = email
         self.score = score
+        self.history = []
 
     def __str__(self):
         return f"({self.user_id}) {self.first_name} {self.last_name}"
@@ -33,6 +34,16 @@ class User:
 
     def increase_score(self, amount=1):
         self.score += amount
+
+    def solve(self, task, user_answer):
+        if not isinstance(task, Question) and not isinstance(task, Expression):
+            return None
+
+        question = task
+        result = question.to_dict()
+        result["user_answer"] = user_answer
+        result["reward"] = question.reward if user_answer == question.answer else 0
+        self.history.append(result)
 
 
 class Expression:
@@ -65,6 +76,16 @@ class Expression:
         )
         return expr_str
 
+    def to_dict(self):
+        return dict(
+            {
+                "id": self.expr_id,
+                "operation": self.operation,
+                "values": self.values,
+                "string_expression": self.to_string(),
+            }
+        )
+
 
 class Question(ABC):
     def __init__(self, question_id, title, description, reward=1):
@@ -81,6 +102,10 @@ class Question(ABC):
 
     def __str__(self):
         return f"({self.question_id}) {self.title}"
+
+    @staticmethod
+    def is_valid_id(question_id):
+        return question_id in QUEST.keys()
 
 
 class OneAnswer(Question):
@@ -103,6 +128,17 @@ class OneAnswer(Question):
     @staticmethod
     def is_valid(answer):
         return isinstance(answer, str)
+
+    def to_dict(self):
+        return dict(
+            {
+                "id": self.question_id,
+                "title": self.title,
+                "description": self.description,
+                "type": "ONE-ANSWER",
+                "answer": self._answer,
+            }
+        )
 
 
 class MultipleChoice(Question):
@@ -133,3 +169,15 @@ class MultipleChoice(Question):
         if answer < 0 or answer >= len(choices):
             return False
         return True
+
+    def to_dict(self):
+        return dict(
+            {
+                "id": self.question_id,
+                "title": self.title,
+                "description": self.description,
+                "type": "MULTIPLE-CHOICE",
+                "choices": self.choices,
+                "answer": self._answer,
+            }
+        )

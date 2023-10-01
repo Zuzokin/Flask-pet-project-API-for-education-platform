@@ -56,7 +56,7 @@ def get_expr(expr_id):
                 "id": expression.expr_id,
                 "operation": expression.operation,
                 "values": expression.values,
-                "string_expr": expression.to_string(),
+                "string_expression": expression.to_string(),
                 "answer": expression.answer,
             }
         ),
@@ -82,15 +82,19 @@ def solve_expr(expr_id):
     if user_answer == expression.answer:
         user.increase_score(expression.reward)
         result = "correct"
+        reward = expression.reward
     else:
         result = "wrong"
+        reward = 0
+
+    user.solve(expression, user_answer)  # add to history
 
     return Response(
         json.dumps(
             {
                 "expression_id": expr_id,
                 "result": result,
-                "reward": expression.reward,
+                "reward": reward,
             }
         ),
         status=HTTPStatus.OK,
