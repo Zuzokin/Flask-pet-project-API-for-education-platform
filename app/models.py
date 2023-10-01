@@ -17,6 +17,9 @@ class User:
     def __str__(self):
         return f"({self.user_id}) {self.first_name} {self.last_name}"
 
+    def __lt__(self, other):
+        return self.score < other.score
+
     @staticmethod
     def is_valid_email(email):
         return re.fullmatch(r"[^@]+@[^@]+\.[^@]+", email)
@@ -44,6 +47,19 @@ class User:
         result["user_answer"] = user_answer
         result["reward"] = question.reward if user_answer == question.answer else 0
         self.history.append(result)
+
+    def to_dict(self):
+        return dict(
+            {
+                "first_name": self.first_name,
+                "last_name": self.last_name,
+                "score": self.score,
+            }
+        )
+
+    @staticmethod
+    def get_leaderboard():
+        return [user.to_dict() for user in sorted(USERS.values(), reverse=True)]
 
 
 class Expression:

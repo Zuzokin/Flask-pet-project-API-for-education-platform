@@ -1,1 +1,1 @@
-from app.views import questions, users, expressions, views
+from app.views import questions, users, expressions, view_all

@@ -1,8 +1,9 @@
 from app import app, USERS, models
-from flask import request, Response
+from flask import request, Response, url_for
 import json
 from http import HTTPStatus
 from uuid import uuid1
+import matplotlib.pyplot as plt
 
 
 @app.post("/user/create")
@@ -75,3 +76,35 @@ def get_user_history(user_id):
         status=HTTPStatus.OK,
         mimetype="application/json",
     )
+
+
+@app.get("/users/leaderboard")
+def get_users_leaderboard():
+    data = request.get_json()
+    # complexity to sort users and create leaderboard O(N*logN) + O(N)
+    leaderboard = models.User.get_leaderboard()
+    leaderboard_type = data["type"]
+    if leaderboard_type == "table":
+        return Response(
+            json.dumps({"leaderboard": leaderboard}),
+            status=HTTPStatus.OK,
+            mimetype="application/json",
+        )
+    elif leaderboard_type == "graph":
+        user_names = [
+            f"{user['first_name']} {user['last_name']}" for user in leaderboard
+        ]
+        user_scores = [user["score"] for user in leaderboard]
+
+        fig, ax = plt.subplots()
+        ax.bar(user_names, user_scores)
+        ax.set_ylabel("User score")
+        ax.set_title("User leaderboard by score")
+        plt.savefig("app/static/user_leaderboard.png")
+        return Response(
+            f'<img src={url_for(endpoint="static",filename = "user_leaderboard.png")}>',
+            status=HTTPStatus.OK,
+            mimetype="text/html",
+        )
+    else:
+        return Response("Wrong type of leaderboard", status=HTTPStatus.BAD_REQUEST)
